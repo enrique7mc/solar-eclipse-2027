@@ -1,0 +1,19 @@
+{
+  "name": "solar-eclipse-2027",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Interactive 3D visualization of the 2 August 2027 total solar eclipse: the Moon's umbra and penumbra sweeping across an Earth globe, computed from NASA Besselian elements.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "node scripts/check-elements.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.1.0"
+  },
+  "dependencies": {
+    "three": "^0.186.0"
+  }
+}

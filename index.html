@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Total Solar Eclipse · 2 August 2027 · 3D shadow track</title>
+    <meta name="description" content="Interactive 3D globe showing the Moon's umbra and penumbra sweeping across Earth during the total solar eclipse of 2 August 2027, computed from NASA Besselian elements." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23ffb347'/%3E%3Ccircle cx='13' cy='16' r='12' fill='%23070a12'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="view" aria-label="3D eclipse viewer"></canvas>
+      <div id="labels" aria-hidden="true"></div>
+
+      <header class="brand">
+        <div class="eyebrow"><span class="dot"></span>Next total solar eclipse</div>
+        <h1>2 August 2027</h1>
+        <p class="brand__meta">Saros 136 · Greatest eclipse 10:06:37 UT · totality up to 6m 23s · <span id="load-status">Loading Earth…</span></p>
+      </header>
+
+      <aside class="panel readout" id="readout" aria-live="polite">
+        <div class="readout__phase" id="phase">—</div>
+        <dl class="readout__grid" id="stats"></dl>
+        <div class="legend">
+          <span><i class="sw sw--umbra"></i>Umbra (total)</span>
+          <span><i class="sw sw--penumbra"></i>Penumbra (partial)</span>
+          <span><i class="sw sw--path"></i>Path of totality</span>
+          <span><i class="sw sw--line"></i>Central line</span>
+        </div>
+        <p class="hint">Drag to orbit · scroll to zoom · <kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> step 1 min</p>
+      </aside>
+
+      <aside class="panel cities" id="cities">
+        <h2>Places <span class="muted" id="city-count"></span></h2>
+        <p class="muted small">Click a place to jump there at its maximum eclipse.</p>
+        <ul id="city-list"></ul>
+      </aside>
+      <button class="cities-toggle" id="cities-toggle" type="button">Places</button>
+
+      <div class="controls" id="controls">
+        <div class="controls__row">
+          <button class="btn btn--play" id="play" type="button" aria-label="Play">▶</button>
+          <div class="time"><span id="ut">10:06:37</span><span class="time__unit">UT</span></div>
+          <label class="speed">
+            <span class="muted small">Speed</span>
+            <select id="speed">
+              <option value="60">60×</option>
+              <option value="300">300×</option>
+              <option value="600" selected>600×</option>
+              <option value="1800">1800×</option>
+              <option value="3600">3600×</option>
+            </select>
+          </label>
+          <div class="spacer"></div>
+          <label class="toggle"><input type="checkbox" id="follow" checked /> Follow umbra</label>
+          <label class="toggle"><input type="checkbox" id="path" checked /> Path</label>
+          <label class="toggle"><input type="checkbox" id="cones" /> Moon &amp; shadow cones</label>
+          <button class="btn" id="view-moon" type="button">Earth–Moon view</button>
+          <button class="btn" id="view-reset" type="button">Reset view</button>
+        </div>
+        <div class="timeline">
+          <input type="range" id="scrub" min="0" max="1" step="any" value="0.5" aria-label="Time" />
+          <div class="ticks" id="ticks"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
