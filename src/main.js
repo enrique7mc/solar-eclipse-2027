@@ -59,6 +59,7 @@ const state = {
   dragging: false,
   flight: null,
   activeCity: null,
+  viewMode: 'globe',
 };
 
 // ---------- stars ----------
@@ -124,6 +125,9 @@ moon.add(moonHalo);
 const moonLabel = new CSS2DObject(Object.assign(document.createElement('div'), { className: 'label label--moon', textContent: 'Moon' }));
 moonLabel.position.set(ECLIPSE.k2, 0, 0);
 moon.add(moonLabel);
+const earthLabel = new CSS2DObject(Object.assign(document.createElement('div'), { className: 'label label--earth', textContent: 'Earth' }));
+earthLabel.visible = false;
+scene.add(earthLabel);
 
 function cone(rTop, rBottom, zTop, zBottom, material) {
   const h = zTop - zBottom;
@@ -253,7 +257,17 @@ const cityLabels = cityData.map((c) => {
     list.appendChild(li);
   });
 }
-$('cities-toggle').addEventListener('click', () => $('cities').classList.toggle('is-open'));
+const mobileLayout = window.matchMedia('(max-width: 900px)');
+function setCitiesOpen(open) {
+  const cities = $('cities');
+  cities.classList.toggle('is-open', open);
+  cities.classList.toggle('is-collapsed', !open);
+  $('cities-toggle').setAttribute('aria-expanded', String(open));
+}
+setCitiesOpen(!mobileLayout.matches);
+$('cities-toggle').addEventListener('click', () => setCitiesOpen(true));
+$('cities-close').addEventListener('click', () => setCitiesOpen(false));
+mobileLayout.addEventListener('change', (e) => setCitiesOpen(!e.matches));
 
 function goToCity(i) {
   const c = cityData[i];
@@ -261,10 +275,11 @@ function goToCity(i) {
   state.activeCity = i;
   state.playing = false;
   updatePlayButton();
+  leaveEarthMoonView();
   setFollow(false);
   if (c.lc.visible) setTime(c.lc.tMax);
   flyTo(c.dir.clone().multiplyScalar(Math.min(controls.getDistance(), 1.45)), new THREE.Vector3(0, 0, 0), 1.2);
-  $('cities').classList.remove('is-open');
+  if (mobileLayout.matches) setCitiesOpen(false);
 }
 
 // ---------- camera helpers ----------
@@ -312,21 +327,59 @@ function setFollow(v) {
 }
 
 function resetView() {
+  leaveEarthMoonView();
   setFollow(true);
   const el = elementsAt(state.t);
   flyTo(umbraDir(el).multiplyScalar(2.6), new THREE.Vector3(0, 0, 0), 1.4);
+}
+function leaveEarthMoonView() {
+  if (state.viewMode !== 'moon') return;
+  state.viewMode = 'globe';
+  document.body.classList.remove('earth-moon-view');
+  $('view-moon').setAttribute('aria-pressed', 'false');
+  earthLabel.visible = false;
+  camera.up.set(0, 1, 0);
+  controls.update();
+}
+function earthMoonPose(el) {
+  const axis = ef(el.zeta).normalize();
+  const north = ef(el.eta).normalize();
+  const side = new THREE.Vector3().crossVectors(axis, north).normalize();
+  const moonWorld = ef(el.xi).multiplyScalar(el.x)
+    .addScaledVector(ef(el.eta), el.y)
+    .addScaledVector(axis, hMoon);
+  const mid = moonWorld.clone().multiplyScalar(0.5);
+  if (window.innerWidth <= 900 && window.innerHeight > window.innerWidth) {
+    const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+    const distance = (moonWorld.length() * 0.5) / (Math.tan(verticalFov * 0.5) * 0.60);
+    const target = mid.clone().addScaledVector(axis, -distance * 0.06);
+    return { position: target.clone().addScaledVector(side, distance), target, up: axis };
+  }
+  return {
+    position: mid.clone().addScaledVector(side, 78).addScaledVector(north, 18),
+    target: mid,
+    up: new THREE.Vector3(0, 1, 0),
+  };
+}
+function applyEarthMoonPose(pose) {
+  camera.up.copy(pose.up);
+  camera.position.copy(pose.position);
+  controls.target.copy(pose.target);
+  controls.update();
 }
 function earthMoonView() {
   setFollow(false);
   $('cones').checked = true;
   conesVisible(true);
+  state.viewMode = 'moon';
+  document.body.classList.add('earth-moon-view');
+  $('view-moon').setAttribute('aria-pressed', 'true');
+  earthLabel.visible = true;
   const el = elementsAt(state.t);
-  const axis = ef(el.zeta);
-  const north = ef(el.eta);
-  const side = new THREE.Vector3().crossVectors(axis, north).normalize(); // "east" of the axis
-  const mid = axis.clone().multiplyScalar(hMoon * 0.5);
-  const pos = mid.clone().addScaledVector(side, 78).addScaledVector(north, 18);
-  flyTo(pos, mid, 1.8);
+  const pose = earthMoonPose(el);
+  camera.up.copy(pose.up);
+  controls.update();
+  flyTo(pose.position, pose.target, 1.8);
 }
 
 // ---------- readout ----------
@@ -402,7 +455,7 @@ function tickMarks() {
     const s = document.createElement('span');
     s.className = 'tick' + (key === 'ge' ? ' tick--ge' : '');
     s.style.left = `${pct(C[key])}%`;
-    s.textContent = `${label} ${formatUT(C[key], false)}`;
+    s.innerHTML = `<span class="tick__name">${label}</span> <span class="tick__time">${formatUT(C[key], false)}</span>`;
     ticks.appendChild(s);
   }
 }
@@ -424,10 +477,15 @@ function togglePlay() {
 }
 playBtn.addEventListener('click', togglePlay);
 scrub.addEventListener('input', () => setTime(T_START + Number(scrub.value) * (T_END - T_START)));
+$('step-back').addEventListener('click', () => setTime(state.t - 1 / 60));
+$('step-forward').addEventListener('click', () => setTime(state.t + 1 / 60));
 $('speed').addEventListener('change', (e) => { state.speed = Number(e.target.value); });
 $('follow').addEventListener('change', (e) => { state.follow = e.target.checked; });
 $('path').addEventListener('change', (e) => { pathGroup.visible = e.target.checked; });
-$('cones').addEventListener('change', (e) => conesVisible(e.target.checked));
+$('cones').addEventListener('change', (e) => {
+  conesVisible(e.target.checked);
+  if (!e.target.checked && state.viewMode === 'moon') resetView();
+});
 $('view-moon').addEventListener('click', earthMoonView);
 $('view-reset').addEventListener('click', resetView);
 window.addEventListener('keydown', (e) => {
@@ -435,6 +493,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
   else if (e.code === 'ArrowRight') setTime(state.t + (e.shiftKey ? 10 : 1) / 60);
   else if (e.code === 'ArrowLeft') setTime(state.t - (e.shiftKey ? 10 : 1) / 60);
+  else if (e.code === 'Escape' && $('cities').classList.contains('is-open')) setCitiesOpen(false);
 });
 controls.addEventListener('start', () => { state.dragging = true; state.flight = null; });
 controls.addEventListener('end', () => { state.dragging = false; });
@@ -448,6 +507,7 @@ function resize() {
   camera.updateProjectionMatrix();
   lineMaterial.resolution.set(w, h);
   edgeMat.resolution.set(w, h);
+  if (state.viewMode === 'moon' && !state.flight) applyEarthMoonPose(earthMoonPose(elementsAt(state.t)));
 }
 window.addEventListener('resize', resize);
 resize();
@@ -468,7 +528,7 @@ function updateLabels() {
   const dist = camera.position.length();
   cityData.forEach((c, i) => {
     const facing = c.dir.dot(camDir) > 0.12;
-    const important = c.lc.totalDuration != null || i === state.activeCity;
+    const important = i === state.activeCity || (!mobileLayout.matches && c.lc.totalDuration != null);
     cityLabels[i].visible = facing && (important ? dist < 12 : dist < 2.0);
   });
 }
