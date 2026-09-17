@@ -34,37 +34,52 @@
         <p class="hint">Drag to orbit · scroll to zoom · <kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> step 1 min</p>
       </aside>
 
-      <aside class="panel cities" id="cities">
-        <h2>Places <span class="muted" id="city-count"></span></h2>
+      <aside class="panel cities" id="cities" aria-labelledby="cities-title">
+        <div class="cities__header">
+          <h2 id="cities-title">Places <span class="muted" id="city-count"></span></h2>
+          <button class="icon-btn cities__close" id="cities-close" type="button" aria-label="Close places">&times;</button>
+        </div>
         <p class="muted small">Click a place to jump there at its maximum eclipse.</p>
         <ul id="city-list"></ul>
       </aside>
-      <button class="cities-toggle" id="cities-toggle" type="button">Places</button>
+      <button class="btn cities-toggle" id="cities-toggle" type="button" aria-controls="cities" aria-expanded="true">Places</button>
 
       <div class="controls" id="controls">
         <div class="controls__row">
-          <button class="btn btn--play" id="play" type="button" aria-label="Play">▶</button>
-          <div class="time"><span id="ut">10:06:37</span><span class="time__unit">UT</span></div>
-          <label class="speed">
-            <span class="muted small">Speed</span>
-            <select id="speed">
-              <option value="60">60×</option>
-              <option value="300">300×</option>
-              <option value="600" selected>600×</option>
-              <option value="1800">1800×</option>
-              <option value="3600">3600×</option>
-            </select>
-          </label>
+          <div class="controls__primary">
+            <button class="btn btn--play" id="play" type="button" aria-label="Play">▶</button>
+            <div class="time"><span id="ut">10:06:37</span><span class="time__unit">UT</span></div>
+            <label class="speed">
+              <span class="muted small">Speed</span>
+              <select id="speed" aria-label="Playback speed">
+                <option value="60">60×</option>
+                <option value="300">300×</option>
+                <option value="600" selected>600×</option>
+                <option value="1800">1800×</option>
+                <option value="3600">3600×</option>
+              </select>
+            </label>
+          </div>
           <div class="spacer"></div>
-          <label class="toggle"><input type="checkbox" id="follow" checked /> Follow umbra</label>
-          <label class="toggle"><input type="checkbox" id="path" checked /> Path</label>
-          <label class="toggle"><input type="checkbox" id="cones" /> Moon &amp; shadow cones</label>
-          <button class="btn" id="view-moon" type="button">Earth–Moon view</button>
-          <button class="btn" id="view-reset" type="button">Reset view</button>
+          <div class="controls__secondary">
+            <div class="controls__options">
+              <label class="toggle"><input type="checkbox" id="follow" checked /><span>Follow umbra</span></label>
+              <label class="toggle"><input type="checkbox" id="path" checked /><span>Path</span></label>
+              <label class="toggle"><input type="checkbox" id="cones" /><span>Moon &amp; cones</span></label>
+            </div>
+            <div class="controls__views">
+              <button class="btn" id="view-moon" type="button" aria-pressed="false">Earth–Moon view</button>
+              <button class="btn" id="view-reset" type="button">Reset view</button>
+            </div>
+          </div>
         </div>
         <div class="timeline">
-          <input type="range" id="scrub" min="0" max="1" step="any" value="0.5" aria-label="Time" />
-          <div class="ticks" id="ticks"></div>
+          <button class="timeline__step" id="step-back" type="button" aria-label="Step back one minute">−1m</button>
+          <div class="timeline__track">
+            <input type="range" id="scrub" min="0" max="1" step="any" value="0.5" aria-label="Eclipse time" />
+            <div class="ticks" id="ticks"></div>
+          </div>
+          <button class="timeline__step" id="step-forward" type="button" aria-label="Step forward one minute">+1m</button>
         </div>
       </div>
     </div>
